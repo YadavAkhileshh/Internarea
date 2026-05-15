@@ -3,15 +3,20 @@ import Navbar from "@/Components/Navbar";
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { store } from "../store/store";
-import { Provider, useDispatch } from "react-redux";
+import { Provider, useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { auth } from "@/firebase/firebase";
-import { login, logout } from "@/Feature/Userslice";
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { login, logout, selectuser } from "@/Feature/Userslice";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { LangProvider } from "@/context/LangContext";
+import axios from "axios";
+
+var API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000"
+
 export default function App({ Component, pageProps }: AppProps) {
   function AuthListener() {
-    const dispatch = useDispatch();
+    var dispatch = useDispatch();
     useEffect(() => {
       auth.onAuthStateChanged((authuser) => {
         if (authuser) {
@@ -24,6 +29,38 @@ export default function App({ Component, pageProps }: AppProps) {
               phoneNumber: authuser.phoneNumber,
             })
           );
+          if (sessionStorage.getItem("otp_verified_" + authuser.uid)) return;
+
+          axios.post(API + "/api/auth/login-track", {
+            uid: authuser.uid,
+            email: authuser.email,
+            name: authuser.displayName,
+            photo: authuser.photoURL
+          }).then((res) => {
+            if (res.data.status === "OTP_REQUIRED") {
+              var otp = prompt("Security Verification: Enter the OTP sent to your email (" + authuser.email + ").")
+              if (otp) {
+                axios.post(API + "/api/auth/verify-login-otp", { uid: authuser.uid, otp: otp })
+                  .then((verifyRes) => {
+                    if (verifyRes.data.status === "SUCCESS") {
+                      sessionStorage.setItem("otp_verified_" + authuser.uid, "true");
+                    }
+                  })
+                  .catch(() => {
+                    alert("Invalid OTP. Please refresh and try again.");
+                    auth.signOut();
+                  });
+              } else {
+                auth.signOut();
+              }
+            } else {
+              sessionStorage.setItem("otp_verified_" + authuser.uid, "true");
+            }
+          }).catch((err) => {
+            if (err.response?.status === 403) {
+              alert(err.response.data.message)
+            }
+          })
         } else {
           dispatch(logout());
         }
@@ -34,13 +71,15 @@ export default function App({ Component, pageProps }: AppProps) {
 
   return (
     <Provider store={store}>
-      <AuthListener />
-      <div className="bg-white">
-        <ToastContainer/>
-        <Navbar />
-        <Component {...pageProps} />
-        <Footer />
-      </div>
+      <LangProvider>
+        <AuthListener />
+        <div className="bg-white">
+          <ToastContainer />
+          <Navbar />
+          <Component {...pageProps} />
+          <Footer />
+        </div>
+      </LangProvider>
     </Provider>
   );
 }

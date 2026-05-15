@@ -1,0 +1,19 @@
+# env files
+.env
+.env.local
+.env.development
+.env.production
+backend/.env
+internarea/.env
+internarea/.env.local
+
+# dependencies
+node_modules/
+backend/node_modules/
+internarea/node_modules/
+
+# next.js
+internarea/.next/
+
+# os
+.DS_Store
