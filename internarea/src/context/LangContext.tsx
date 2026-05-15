@@ -6,10 +6,10 @@ var LangContext = createContext<any>(null)
 var LANGS = [
   { id: "en", label: "English" },
   { id: "hi", label: "हिन्दी" },
-  { id: "es", label: "Español" },
+  { id: "mr", label: "मराठी" },
+  { id: "gu", label: "ગુજરાતી" },
+  { id: "ta", label: "தமிழ்" },
   { id: "fr", label: "Français" },
-  { id: "pt", label: "Português" },
-  { id: "zh", label: "中文" }
 ]
 
 export function LangProvider({ children }: any) {

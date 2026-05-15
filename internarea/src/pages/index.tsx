@@ -217,28 +217,28 @@ export default function HomePage() {
           {user && (
             <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-100 px-4 py-2 rounded-full">
               <Users size={16} />
-              <span>{friendList.length} friend{friendList.length !== 1 ? "s" : ""}</span>
+              <span>{friendList.length} {t("friends")}</span>
             </div>
           )}
         </div>
-
+ 
         {user && allUsers.filter((u: any) => u.uid && u.uid !== user.uid && !friendList.includes(u.uid)).length > 0 && (
           <div className="bg-white rounded-xl shadow-md p-5 mb-6">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">People you may know</h3>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">{t("peopleYouMayKnow")}</h3>
             <div className="flex gap-4 overflow-x-auto pb-2">
               {allUsers.filter((u: any) => u.uid && u.uid !== user.uid && !friendList.includes(u.uid)).slice(0, 8).map((u: any) => (
                 <div key={u.uid} className="flex flex-col items-center min-w-[80px]">
                   <img src={u.photo || "/default-avatar.png"} alt="" className="w-12 h-12 rounded-full mb-1" />
                   <p className="text-xs text-gray-700 text-center truncate w-20">{u.name || "User"}</p>
                   <button onClick={() => handleAddFriend(u.uid)} className="mt-1 text-xs text-blue-600 border border-blue-200 rounded-full px-2 py-0.5 hover:bg-blue-50">
-                    Connect
+                    {t("connect")}
                   </button>
                 </div>
               ))}
             </div>
           </div>
         )}
-
+ 
         {user && (
           <div className="bg-white rounded-xl shadow-md p-5 mb-6">
             <div className="flex items-start gap-3">
@@ -260,14 +260,14 @@ export default function HomePage() {
                 <div className="flex items-center justify-between mt-3">
                   <div className="flex gap-2">
                     <button onClick={() => handleMediaInput("image")} className="flex items-center gap-1 text-sm text-gray-500 hover:text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-50">
-                      <Image size={16} /> Photo
+                      <Image size={16} /> {t("photo")}
                     </button>
                     <button onClick={() => handleMediaInput("video")} className="flex items-center gap-1 text-sm text-gray-500 hover:text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-50">
-                      <Video size={16} /> Video
+                      <Video size={16} /> {t("video")}
                     </button>
                   </div>
                   <button onClick={handlePost} disabled={postLoading} className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
-                    {postLoading ? "Posting..." : "Post"}
+                    {postLoading ? t("posting") : t("post")}
                   </button>
                 </div>
                 {postLimitMsg && (
@@ -351,7 +351,7 @@ export default function HomePage() {
       <div className="mb-12">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">{t("latestInternships")}</h2>
         <div className="flex flex-wrap gap-4">
-          <span className="text-gray-700 font-medium">POPULAR CATEGORIES:</span>
+          <span className="text-gray-700 font-medium uppercase tracking-wider">{t("popularCategories")}</span>
           {categories.map((category) => (
             <button
               key={category}
@@ -384,7 +384,7 @@ export default function HomePage() {
               <div className="flex items-center gap-2"><Calendar size={18} /><span>{internship.duration}</span></div>
             </div>
             <div className="flex items-center justify-between mt-6">
-              <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">Internship</span>
+              <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">{t("internshipLabel")}</span>
               <Link href={`/detailiternship/${internship._id}`} className="text-blue-600 hover:text-blue-700 flex items-center gap-1">
                 {t("viewDetails")} <ChevronRight size={16} />
               </Link>
@@ -411,7 +411,7 @@ export default function HomePage() {
                 <div className="flex items-center gap-2"><Calendar size={18} /><span>{job.Experience}</span></div>
               </div>
               <div className="flex items-center justify-between mt-6">
-                <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">Jobs</span>
+                <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">{t("jobsLabel")}</span>
                 <Link href={`/detailjob/${job._id}`} className="text-blue-600 hover:text-blue-700 flex items-center gap-1">
                   {t("viewDetails")} <ChevronRight size={16} />
                 </Link>

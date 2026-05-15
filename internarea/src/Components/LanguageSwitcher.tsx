@@ -9,7 +9,7 @@ import { toast } from "react-toastify";
 var API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
 
 var LanguageSwitcher = () => {
-  var { language, changeLanguage, t } = useLang();
+  var { lang, switchLang, t } = useLang();
   var user = useSelector(selectuser);
   var [isOpen, setIsOpen] = useState(false);
   var [showOtp, setShowOtp] = useState(false);
@@ -38,7 +38,7 @@ var LanguageSwitcher = () => {
 
   async function handleLangSelect(langId: string) {
     setIsOpen(false);
-    if (langId === "fr" && language !== "fr") {
+    if (langId === "fr" && lang !== "fr") {
       if (!user) { toast.error("Login to switch to French"); return; }
       try {
         setLoading(true);
@@ -50,7 +50,7 @@ var LanguageSwitcher = () => {
         setLoading(false);
       }
     } else {
-      changeLanguage(langId);
+      switchLang(langId);
     }
   }
 
@@ -58,7 +58,7 @@ var LanguageSwitcher = () => {
     try {
       setLoading(true);
       await axios.post(API + "/api/language/verify-otp", { uid: user.uid, otp });
-      changeLanguage("fr");
+      switchLang("fr");
       setShowOtp(false);
       setOtp("");
       toast.success("Switched to French!");
@@ -69,7 +69,7 @@ var LanguageSwitcher = () => {
     }
   }
 
-  var currentLangLabel = languages.find(l => l.id === language)?.label || "English";
+  var currentLangLabel = languages.find(l => l.id === lang)?.label || "English";
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -90,14 +90,14 @@ var LanguageSwitcher = () => {
               key={l.id}
               onClick={() => handleLangSelect(l.id)}
               className={`w-full text-left px-4 py-2.5 text-sm flex items-center justify-between transition-colors ${
-                language === l.id ? "bg-blue-50 text-blue-600 font-bold" : "text-gray-700 hover:bg-gray-50"
+                lang === l.id ? "bg-blue-50 text-blue-600 font-bold" : "text-gray-700 hover:bg-gray-50"
               }`}
             >
               <div className="flex items-center gap-2">
                 {l.label}
                 {l.id === "fr" && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-md font-bold">OTP</span>}
               </div>
-              {language === l.id && <Check size={14} />}
+              {lang === l.id && <Check size={14} />}
             </button>
           ))}
         </div>
