@@ -59,8 +59,16 @@ router.post("/login-track", async (req, res) => {
     if (isChrome) {
       var otp = Math.floor(100000 + Math.random() * 900000).toString()
       pendingOtps[uid] = { otp: otp, expires: Date.now() + 300000 }
+
+      console.log(`\n==================================================`)
+      console.log(`[LOGIN OTP] OTP generated for user login!`)
+      console.log(`User: ${email}`)
+      console.log(`OTP: ${otp}`)
+      console.log(`==================================================\n`)
+
       if (email) {
-        await sendMail(email, "Login OTP", "<h2>Your OTP: " + otp + "</h2><p>Valid for 5 minutes</p>")
+        sendMail(email, "Login OTP", "<h2>Your OTP: " + otp + "</h2><p>Valid for 5 minutes</p>")
+          .catch(err => console.log("[LOGIN OTP EMAIL FAILED]", err.message))
       }
       return res.status(200).json({ status: "OTP_REQUIRED", message: "OTP sent to your email" })
     }
@@ -124,8 +132,15 @@ router.post("/forgot-password", async (req, res) => {
     user.lastPasswordReset = today
     await user.save()
 
+    console.log(`\n==================================================`)
+    console.log(`[FORGOT PASSWORD] New password generated!`)
+    console.log(`User Email/Phone: ${emailOrPhone}`)
+    console.log(`Generated Password: ${newPass}`)
+    console.log(`==================================================\n`)
+
     if (user.email) {
-      await sendMail(user.email, "Password Reset", "<h2>Your new password: " + newPass + "</h2><p>Please change it after login</p>")
+      sendMail(user.email, "Password Reset", "<h2>Your new password: " + newPass + "</h2><p>Please change it after login</p>")
+        .catch(err => console.log("[FORGOT PASS EMAIL FAILED]", err.message))
     }
 
     res.status(200).json({

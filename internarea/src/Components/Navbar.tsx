@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { auth, provider } from "../firebase/firebase";
-import { Search, KeyRound, RefreshCw, X, Menu } from "lucide-react";
+import { Search, KeyRound, RefreshCw, X, Menu, Lock } from "lucide-react";
 import { signInWithPopup, signOut } from "firebase/auth";
 import { toast } from "react-toastify";
 import { useSelector, useDispatch } from "react-redux";
@@ -23,9 +23,16 @@ var Navbar = () => {
   var [forgotDone, setForgotDone] = useState(false);
   var [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  var [showClassicLogin, setShowClassicLogin] = useState(false);
+  var [classicEmail, setClassicEmail] = useState("");
+  var [classicPassword, setClassicPassword] = useState("");
+  var [classicLoading, setClassicLoading] = useState(false);
+
   var handlelogin = async () => {
     try {
       await signInWithPopup(auth, provider);
+      sessionStorage.setItem("login_type", "google");
+      sessionStorage.removeItem("classic_user");
       setIsMenuOpen(false);
       toast.success("logged in successfully");
     } catch (error) {
@@ -36,10 +43,42 @@ var Navbar = () => {
 
   var handlelogout = () => {
     signOut(auth);
+    sessionStorage.removeItem("login_type");
+    sessionStorage.removeItem("classic_user");
     setIsMenuOpen(false);
   };
 
-
+  async function handleClassicLoginSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!classicEmail.trim() || !classicPassword.trim()) {
+      toast.error("Email and password are required");
+      return;
+    }
+    setClassicLoading(true);
+    try {
+      var res = await axios.post(API + "/api/auth/login-classic", {
+        email: classicEmail,
+        password: classicPassword
+      });
+      toast.success("Logged in successfully!");
+      var userData = {
+        uid: res.data.user.uid,
+        email: res.data.user.email,
+        name: res.data.user.name,
+        photo: res.data.user.photo || "https://www.gravatar.com/avatar/?d=mp"
+      };
+      sessionStorage.setItem("login_type", "classic");
+      sessionStorage.setItem("classic_user", JSON.stringify(userData));
+      dispatch(login(userData));
+      setShowClassicLogin(false);
+      setClassicEmail("");
+      setClassicPassword("");
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Login failed");
+    } finally {
+      setClassicLoading(false);
+    }
+  }
 
   async function handleForgotSubmit() {
     if (!forgotInput.trim()) { toast.error("Enter email or phone"); return; }
@@ -116,24 +155,7 @@ var Navbar = () => {
                       </svg>
                     </button>
                     <button 
-                      onClick={() => {
-                        var email = prompt("Enter Email:")
-                        var pass = prompt("Enter your Generated Password:")
-                        if (email && pass) {
-                          axios.post(API + "/api/auth/login-classic", { email, password: pass })
-                            .then(res => {
-                              toast.success("Logged in with email!");
-                              var userData = {
-                                uid: res.data.user.uid,
-                                email: res.data.user.email,
-                                name: res.data.user.name,
-                                photo: res.data.user.photo || "https://www.gravatar.com/avatar/?d=mp"
-                              };
-                              dispatch(login(userData));
-                            })
-                            .catch(err => toast.error(err.response?.data?.message || "Login failed"));
-                        }
-                      }} 
+                      onClick={() => setShowClassicLogin(true)} 
                       className="bg-blue-600 text-white rounded-lg px-4 py-2 text-xs font-bold hover:bg-blue-700 transition-all shadow-md active:scale-95"
                     >
                       Login with Email
@@ -212,22 +234,7 @@ var Navbar = () => {
                 <button 
                   onClick={() => {
                     setIsMenuOpen(false);
-                    var email = prompt("Enter Email:")
-                    var pass = prompt("Enter your Generated Password:")
-                    if (email && pass) {
-                      axios.post(API + "/api/auth/login-classic", { email, password: pass })
-                        .then(res => {
-                          toast.success("Logged in with email!");
-                          var userData = {
-                            uid: res.data.user.uid,
-                            email: res.data.user.email,
-                            name: res.data.user.name,
-                            photo: res.data.user.photo || "https://www.gravatar.com/avatar/?d=mp"
-                          };
-                          dispatch(login(userData));
-                        })
-                        .catch(err => toast.error(err.response?.data?.message || "Login failed"));
-                    }
+                    setShowClassicLogin(true);
                   }}
                   className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-blue-100 active:scale-95 transition-transform"
                 >
@@ -288,6 +295,68 @@ var Navbar = () => {
                 <p className="text-gray-500 text-xs">Letters only. No numbers or special characters.</p>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {showClassicLogin && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 animate-in fade-in duration-200" onClick={() => setShowClassicLogin(false)}>
+          <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl relative animate-in zoom-in duration-300" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setShowClassicLogin(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+              <X size={20} />
+            </button>
+            <div className="text-center mb-6">
+              <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Lock className="text-blue-600" size={24} />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">Login with Email</h2>
+              <p className="text-gray-500 text-sm mt-1">Enter your registered email and password</p>
+            </div>
+
+            <form onSubmit={handleClassicLoginSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
+                <input
+                  type="email"
+                  value={classicEmail}
+                  onChange={(e) => setClassicEmail(e.target.value)}
+                  placeholder="Enter email"
+                  className="w-full border-2 border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-400 text-gray-900 bg-gray-50"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+                <input
+                  type="password"
+                  value={classicPassword}
+                  onChange={(e) => setClassicPassword(e.target.value)}
+                  placeholder="Enter password"
+                  className="w-full border-2 border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-400 text-gray-900 bg-gray-50"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={classicLoading}
+                className="w-full bg-blue-600 text-white py-3 rounded-xl text-sm font-bold hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] mt-2"
+              >
+                {classicLoading && <RefreshCw className="animate-spin" size={16} />}
+                Sign In
+              </button>
+            </form>
+
+            <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-100 text-xs">
+              <button 
+                onClick={() => { setShowClassicLogin(false); setShowForgot(true); }}
+                className="font-bold text-blue-600 hover:text-blue-800 transition-colors uppercase tracking-wider"
+              >
+                {t("forgotPassword")}?
+              </button>
+              <span className="text-gray-400 font-medium">Use generated pass to log in</span>
+            </div>
           </div>
         </div>
       )}

@@ -202,7 +202,7 @@ var ProfilePage = () => {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <p className="text-sm text-amber-600 bg-amber-50 px-4 py-2 rounded-lg">Premium feature — ₹50 per resume. Email OTP verification required before payment.</p>
+                      <p className="text-sm text-amber-600 bg-amber-50 px-4 py-2 rounded-lg">Premium feature ₹50 per resume. Email OTP verification required before payment.</p>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
                         <input name="name" value={resumeForm.name} onChange={handleResumeChange} className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-400 text-gray-800" />

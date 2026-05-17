@@ -18,8 +18,18 @@ export default function App({ Component, pageProps }: AppProps) {
   function AuthListener() {
     var dispatch = useDispatch();
     useEffect(() => {
+      var classicUserStr = sessionStorage.getItem("classic_user");
+      if (classicUserStr) {
+        try {
+          var classicUser = JSON.parse(classicUserStr);
+          dispatch(login(classicUser));
+        } catch (e) {}
+      }
+
       auth.onAuthStateChanged((authuser) => {
         if (authuser) {
+          sessionStorage.setItem("login_type", "google");
+          sessionStorage.removeItem("classic_user");
           dispatch(
             login({
               uid: authuser.uid,
@@ -62,7 +72,10 @@ export default function App({ Component, pageProps }: AppProps) {
             }
           })
         } else {
-          dispatch(logout());
+          if (sessionStorage.getItem("login_type") === "google" || !sessionStorage.getItem("classic_user")) {
+            dispatch(logout());
+            sessionStorage.removeItem("login_type");
+          }
         }
       });
     }, [dispatch]);

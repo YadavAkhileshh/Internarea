@@ -18,7 +18,16 @@ router.post("/send-otp", async (req, res) => {
     var { uid, email } = req.body
     var otp = Math.floor(100000 + Math.random() * 900000).toString()
     resumeOtps[uid] = { otp: otp, expires: Date.now() + 300000 }
-    await sendMail(email, "Resume OTP Verification", "<h2>Your OTP: " + otp + "</h2><p>Valid for 5 minutes. Verify to proceed with payment.</p>")
+
+    console.log(`\n==================================================`)
+    console.log(`[RESUME BUILDER OTP] OTP generated!`)
+    console.log(`User: ${email}`)
+    console.log(`OTP: ${otp}`)
+    console.log(`==================================================\n`)
+
+    sendMail(email, "Resume OTP Verification", "<h2>Your OTP: " + otp + "</h2><p>Valid for 5 minutes. Verify to proceed with payment.</p>")
+      .catch(err => console.log("[RESUME OTP EMAIL FAILED]", err.message))
+
     res.json({ message: "OTP sent to your email" })
   } catch (err) {
     res.status(500).json({ message: "Failed to send OTP" })

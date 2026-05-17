@@ -6,10 +6,15 @@ var transporter = null
 function getTransporter() {
   if (!transporter) {
     transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
+      },
+      tls: {
+        rejectUnauthorized: false
       }
     })
   }
@@ -19,15 +24,16 @@ function getTransporter() {
 async function sendMail(to, subject, html) {
   var t = getTransporter()
   try {
-    await t.sendMail({
+    var info = await t.sendMail({
       from: process.env.EMAIL_USER,
       to: to,
       subject: subject,
       html: html
     })
+    console.log(`[MAIL SUCCESS] Sent email to: ${to}, MessageId: ${info.messageId}`)
     return true
   } catch (err) {
-    console.log("email send failed:", err.message)
+    console.log("[MAIL ERROR] email send failed:", err.message)
     return false
   }
 }

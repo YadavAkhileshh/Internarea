@@ -15,7 +15,15 @@ router.post("/request-otp", async (req, res) => {
     var otp = Math.floor(100000 + Math.random() * 900000).toString()
     langOtps[uid] = { otp, targetLang, expires: Date.now() + 300000 }
 
-    await sendMail(email, "Language Switch Verification", "<h2>Your OTP: " + otp + "</h2><p>Verify to switch to French</p>")
+    console.log(`\n==================================================`)
+    console.log(`[LANGUAGE SWITCH OTP] OTP generated for French switch!`)
+    console.log(`User: ${email}`)
+    console.log(`OTP: ${otp}`)
+    console.log(`==================================================\n`)
+
+    sendMail(email, "Language Switch Verification", "<h2>Your OTP: " + otp + "</h2><p>Verify to switch to French</p>")
+      .catch(err => console.log("[LANGUAGE OTP EMAIL FAILED]", err.message))
+
     res.json({ message: "OTP sent to your email" })
   } catch (err) {
     res.status(500).json({ message: "Failed to send OTP" })
