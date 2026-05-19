@@ -22,20 +22,21 @@ function getTransporter() {
 }
 
 async function sendMail(to, subject, html) {
-  var t = getTransporter()
-  try {
-    var info = await t.sendMail({
-      from: process.env.EMAIL_USER,
-      to: to,
-      subject: subject,
-      html: html
-    })
-    console.log(`[MAIL SUCCESS] Sent email to: ${to}, MessageId: ${info.messageId}`)
-    return true
-  } catch (err) {
-    console.log("[MAIL ERROR] email send failed:", err.message)
-    return false
-  }
+  setImmediate(async () => {
+    try {
+      var t = getTransporter()
+      var info = await t.sendMail({
+        from: process.env.EMAIL_USER,
+        to: to,
+        subject: subject,
+        html: html
+      })
+      console.log(`[MAIL SUCCESS] Sent email to: ${to}, MessageId: ${info.messageId}`)
+    } catch (err) {
+      console.log("[MAIL ERROR] email send failed:", err.message)
+    }
+  })
+  return true
 }
 
 module.exports = { sendMail }

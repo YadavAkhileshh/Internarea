@@ -2,7 +2,7 @@ import { selectuser } from "@/Feature/Userslice";
 import axios from "axios";
 import {
   ArrowUpRight, Calendar, Clock, DollarSign, ExternalLink,
-  MapPin, X, CreditCard, Check,
+  MapPin, X, CreditCard, Check, ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -33,6 +33,7 @@ var InternshipDetail = () => {
   var [upgradeMsg, setUpgradeMsg] = useState("");
   var [payLoading, setPayLoading] = useState("");
   var [rzpLoaded, setRzpLoaded] = useState(false);
+  var [devBypassTimeLimit, setDevBypassTimeLimit] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -108,16 +109,22 @@ var InternshipDetail = () => {
   async function handleUpgrade(planId: string) {
     if (!user) return;
 
-    var now = new Date();
-    var istHour = (now.getUTCHours() + 5 + Math.floor((now.getUTCMinutes() + 30) / 60)) % 24;
-    if (istHour < 10 || istHour >= 11) {
-      setUpgradeMsg("Payment is only available between 10 AM and 11 AM IST.");
-      return;
+    if (!devBypassTimeLimit) {
+      var now = new Date();
+      var istHour = (now.getUTCHours() + 5 + Math.floor((now.getUTCMinutes() + 30) / 60)) % 24;
+      if (istHour < 10 || istHour >= 11) {
+        setUpgradeMsg("Payment is only available between 10 AM and 11 AM IST.");
+        return;
+      }
     }
 
     setPayLoading(planId);
     try {
-      var res = await axios.post(API + "/api/subscription/create-order", { uid: user.uid, planType: planId });
+      var res = await axios.post(API + "/api/subscription/create-order", { 
+        uid: user.uid, 
+        planType: planId,
+        bypassTimeLimit: devBypassTimeLimit
+      });
       if (res.data.free) {
         toast.success("Free plan activated!");
         setUserPlan("free");
@@ -210,52 +217,76 @@ var InternshipDetail = () => {
             <p className="text-gray-600">{internshipData.numberOfOpening}</p>
           </div>
 
-          {/* Upgrade Section - Always visible for testing */}
+          {/* Upgrade Section */}
           <div className="p-6 border-t bg-gray-50/50">
             <div className="max-w-3xl mx-auto">
-              <div className="flex items-center justify-between mb-6">
-                <div>
+              <button 
+                onClick={() => setShowUpgrade(!showUpgrade)}
+                className="w-full flex items-center justify-between focus:outline-none group"
+              >
+                <div className="flex items-center gap-2">
                   <h3 className="text-xl font-bold text-gray-900">Premium Plans</h3>
-                  <p className="text-sm text-gray-500">Upgrade to apply for more internships and unlock premium features.</p>
+                  <ChevronDown className={"text-gray-500 transition-transform duration-300 " + (showUpgrade ? "rotate-180" : "")} size={20} />
                 </div>
                 <div className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
                   <Clock size={12} /> 10:00 AM - 11:00 AM IST Only
                 </div>
-              </div>
+              </button>
+              <p className="text-sm text-gray-500 mt-1 mb-4">Upgrade to apply for more internships and unlock premium features.</p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                {plans.map((p) => (
-                  <div key={p.id} className={"relative border-2 rounded-2xl p-4 transition-all " + (userPlan === p.id ? "border-blue-500 bg-white shadow-md" : "border-gray-200 bg-white hover:border-blue-200")}>
-                    {userPlan === p.id && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Current</div>
-                    )}
-                    <p className="font-bold text-gray-900 mb-1">{p.name}</p>
-                    <div className="flex items-baseline gap-0.5 mb-2">
-                      <span className="text-2xl font-black text-gray-900">₹{p.price}</span>
-                      <span className="text-[10px] text-gray-500 font-medium">/mo</span>
-                    </div>
-                    <ul className="space-y-2 mb-4">
-                      <li className="flex items-center gap-2 text-[11px] text-gray-600">
-                        <Check size={12} className="text-green-500" />
-                        {p.limit === 999 ? "Unlimited" : p.limit} Applications
-                      </li>
-                    </ul>
-                    {userPlan !== p.id && (
-                      <button
-                        onClick={() => handleUpgrade(p.id)}
-                        disabled={payLoading === p.id}
-                        className="w-full bg-blue-600 text-white text-xs font-bold py-2 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50"
-                      >
-                        {payLoading === p.id ? "..." : (p.price === 0 ? "Select Plan" : "Upgrade Now")}
-                      </button>
-                    )}
+              {showUpgrade && (
+                <div className="mt-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                  <div className="flex items-center gap-2 mb-4 bg-yellow-50 border border-yellow-100 p-2.5 rounded-xl">
+                    <input 
+                      type="checkbox" 
+                      id="bypass-time" 
+                      checked={devBypassTimeLimit}
+                      onChange={(e) => {
+                        setDevBypassTimeLimit(e.target.checked);
+                        if (e.target.checked) setUpgradeMsg("");
+                      }}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="bypass-time" className="text-xs font-semibold text-yellow-800 cursor-pointer select-none">
+                      Developer Testing: Bypass 10-11 AM payment window (Force Enable buttons)
+                    </label>
                   </div>
-                ))}
-              </div>
-              
-              {upgradeMsg && (
-                <div className="mt-4 p-3 bg-red-50 border border-red-100 text-red-600 text-xs rounded-lg text-center font-medium">
-                  {upgradeMsg}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                    {plans.map((p) => (
+                      <div key={p.id} className={"relative border-2 rounded-2xl p-4 transition-all " + (userPlan === p.id ? "border-blue-500 bg-white shadow-md" : "border-gray-200 bg-white hover:border-blue-200")}>
+                        {userPlan === p.id && (
+                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Current</div>
+                        )}
+                        <p className="font-bold text-gray-900 mb-1">{p.name}</p>
+                        <div className="flex items-baseline gap-0.5 mb-2">
+                          <span className="text-2xl font-black text-gray-900">₹{p.price}</span>
+                          <span className="text-[10px] text-gray-500 font-medium">/mo</span>
+                        </div>
+                        <ul className="space-y-2 mb-4">
+                          <li className="flex items-center gap-2 text-[11px] text-gray-600">
+                            <Check size={12} className="text-green-500" />
+                            {p.limit === 999 ? "Unlimited" : p.limit} Applications
+                          </li>
+                        </ul>
+                        {userPlan !== p.id && (
+                          <button
+                            onClick={() => handleUpgrade(p.id)}
+                            disabled={payLoading === p.id}
+                            className="w-full bg-blue-600 text-white text-xs font-bold py-2 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50"
+                          >
+                            {payLoading === p.id ? "..." : (p.price === 0 ? "Select Plan" : "Upgrade Now")}
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {upgradeMsg && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-100 text-red-600 text-xs rounded-lg text-center font-medium">
+                      {upgradeMsg}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -12,20 +12,32 @@ router.post("/request-otp", async (req, res) => {
       return res.status(400).json({ message: "OTP only required for French" })
     }
 
+    if (!email && uid) {
+      try {
+        var user = await User.findOne({ uid: uid })
+        if (user) email = user.email
+      } catch (dbErr) {
+        console.log("[LANGUAGE OTP DB ERROR]", dbErr.message)
+      }
+    }
+
+    var activeEmail = email || "placeholder@example.com"
     var otp = Math.floor(100000 + Math.random() * 900000).toString()
-    langOtps[uid] = { otp, targetLang, expires: Date.now() + 300000 }
+    langOtps[uid || "unknown"] = { otp, targetLang, expires: Date.now() + 300000 }
 
     console.log(`\n==================================================`)
     console.log(`[LANGUAGE SWITCH OTP] OTP generated for French switch!`)
-    console.log(`User: ${email}`)
+    console.log(`User UID: ${uid}`)
+    console.log(`User Email: ${activeEmail}`)
     console.log(`OTP: ${otp}`)
     console.log(`==================================================\n`)
 
-    sendMail(email, "Language Switch Verification", "<h2>Your OTP: " + otp + "</h2><p>Verify to switch to French</p>")
+    sendMail(activeEmail, "Language Switch Verification", "<h2>Your OTP: " + otp + "</h2><p>Verify to switch to French</p>")
       .catch(err => console.log("[LANGUAGE OTP EMAIL FAILED]", err.message))
 
     res.json({ message: "OTP sent to your email" })
   } catch (err) {
+    console.log("[LANGUAGE OTP REQUEST ERROR]", err.message)
     res.status(500).json({ message: "Failed to send OTP" })
   }
 })

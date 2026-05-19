@@ -21,13 +21,13 @@ var planInfo = {
 
 router.post("/create-order", async (req, res) => {
   try {
-    var { uid, planType } = req.body
+    var { uid, planType, bypassTimeLimit } = req.body
 
     if (!planInfo[planType]) {
       return res.status(400).json({ message: "Invalid plan" })
     }
 
-    if (!isPaymentWindow()) {
+    if (!isPaymentWindow() && !bypassTimeLimit) {
       return res.status(403).json({ message: "Payments only accepted between 10 AM and 11 AM IST" })
     }
 

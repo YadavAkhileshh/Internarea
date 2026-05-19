@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { auth, provider } from "../firebase/firebase";
-import { Search, KeyRound, RefreshCw, X, Menu, Lock } from "lucide-react";
+import { Search, KeyRound, RefreshCw, X, Menu, Lock, Eye, EyeOff } from "lucide-react";
 import { signInWithPopup, signOut } from "firebase/auth";
 import { toast } from "react-toastify";
 import { useSelector, useDispatch } from "react-redux";
@@ -27,6 +27,7 @@ var Navbar = () => {
   var [classicEmail, setClassicEmail] = useState("");
   var [classicPassword, setClassicPassword] = useState("");
   var [classicLoading, setClassicLoading] = useState(false);
+  var [showClassicPassword, setShowClassicPassword] = useState(false);
 
   var handlelogin = async () => {
     try {
@@ -73,6 +74,7 @@ var Navbar = () => {
       setShowClassicLogin(false);
       setClassicEmail("");
       setClassicPassword("");
+      setShowClassicPassword(false);
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Login failed");
     } finally {
@@ -328,14 +330,23 @@ var Navbar = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
-                <input
-                  type="password"
-                  value={classicPassword}
-                  onChange={(e) => setClassicPassword(e.target.value)}
-                  placeholder="Enter password"
-                  className="w-full border-2 border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-400 text-gray-900 bg-gray-50"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showClassicPassword ? "text" : "password"}
+                    value={classicPassword}
+                    onChange={(e) => setClassicPassword(e.target.value)}
+                    placeholder="Enter password"
+                    className="w-full border-2 border-gray-100 rounded-xl pl-4 pr-12 py-3 text-sm focus:outline-none focus:border-blue-400 text-gray-900 bg-gray-50"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowClassicPassword(!showClassicPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                  >
+                    {showClassicPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
 
               <button
