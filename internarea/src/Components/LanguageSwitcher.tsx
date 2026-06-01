@@ -42,7 +42,7 @@ var LanguageSwitcher = () => {
       if (!user) { toast.error("Login to switch to French"); return; }
       try {
         setLoading(true);
-        await axios.post(API + "/api/language/request-otp", { uid: user.uid, email: user.email, targetLang: "fr" });
+        await axios.post(API + "/api/lang/request-otp", { uid: user.uid, email: user.email, targetLang: "fr" });
         setShowOtp(true);
       } catch (err) {
         toast.error("Failed to send OTP");
@@ -50,6 +50,13 @@ var LanguageSwitcher = () => {
         setLoading(false);
       }
     } else {
+      if (user) {
+        try {
+          await axios.post(API + "/api/lang/switch", { uid: user.uid, targetLang: langId });
+        } catch (err) {
+          console.error("Failed to persist language switch on backend:", err);
+        }
+      }
       switchLang(langId);
     }
   }
@@ -57,7 +64,7 @@ var LanguageSwitcher = () => {
   async function verifyFrench() {
     try {
       setLoading(true);
-      await axios.post(API + "/api/language/verify-otp", { uid: user.uid, otp });
+      await axios.post(API + "/api/lang/verify-otp", { uid: user.uid, otp });
       switchLang("fr");
       setShowOtp(false);
       setOtp("");

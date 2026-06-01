@@ -9,7 +9,7 @@ import { auth } from "@/firebase/firebase";
 import { login, logout, selectuser } from "@/Feature/Userslice";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { LangProvider } from "@/context/LangContext";
+import { LangProvider, useLang } from "@/context/LangContext";
 import axios from "axios";
 
 var API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000"
@@ -17,12 +17,16 @@ var API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000"
 export default function App({ Component, pageProps }: AppProps) {
   function AuthListener() {
     var dispatch = useDispatch();
+    var { switchLang } = useLang();
     useEffect(() => {
       var classicUserStr = sessionStorage.getItem("classic_user");
       if (classicUserStr) {
         try {
           var classicUser = JSON.parse(classicUserStr);
           dispatch(login(classicUser));
+          if (classicUser.language) {
+            switchLang(classicUser.language);
+          }
         } catch (e) {}
       }
 
@@ -54,6 +58,9 @@ export default function App({ Component, pageProps }: AppProps) {
                   .then((verifyRes) => {
                     if (verifyRes.data.status === "SUCCESS") {
                       sessionStorage.setItem("otp_verified_" + authuser.uid, "true");
+                      if (verifyRes.data.user?.language) {
+                        switchLang(verifyRes.data.user.language);
+                      }
                     }
                   })
                   .catch(() => {
@@ -65,6 +72,9 @@ export default function App({ Component, pageProps }: AppProps) {
               }
             } else {
               sessionStorage.setItem("otp_verified_" + authuser.uid, "true");
+              if (res.data.user?.language) {
+                switchLang(res.data.user.language);
+              }
             }
           }).catch((err) => {
             if (err.response?.status === 403) {
@@ -78,7 +88,7 @@ export default function App({ Component, pageProps }: AppProps) {
           }
         }
       });
-    }, [dispatch]);
+    }, [dispatch, switchLang]);
     return null;
   }
 
