@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useLang } from "@/context/LangContext";
-import { Globe, Check, RefreshCw, ChevronDown } from "lucide-react";
+import { Globe, Check, RefreshCw, ChevronDown, Mail, X } from "lucide-react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { selectuser } from "@/Feature/Userslice";
 import { toast } from "react-toastify";
+import { createPortal } from "react-dom";
 
-var API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+var rawAPI = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+var API = rawAPI.endsWith("/") ? rawAPI.slice(0, -1) : rawAPI;
 
 var LanguageSwitcher = () => {
   var { lang, switchLang, t } = useLang();
@@ -15,6 +17,7 @@ var LanguageSwitcher = () => {
   var [showOtp, setShowOtp] = useState(false);
   var [otp, setOtp] = useState("");
   var [loading, setLoading] = useState(false);
+  var [mounted, setMounted] = useState(false);
   var dropdownRef = useRef<HTMLDivElement>(null);
 
   var languages = [
@@ -27,6 +30,7 @@ var LanguageSwitcher = () => {
   ];
 
   useEffect(() => {
+    setMounted(true);
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
@@ -44,8 +48,8 @@ var LanguageSwitcher = () => {
         setLoading(true);
         await axios.post(API + "/api/lang/request-otp", { uid: user.uid, email: user.email, targetLang: "fr" });
         setShowOtp(true);
-      } catch (err) {
-        toast.error("Failed to send OTP");
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || "Failed to send OTP");
       } finally {
         setLoading(false);
       }
@@ -69,8 +73,8 @@ var LanguageSwitcher = () => {
       setShowOtp(false);
       setOtp("");
       toast.success("Switched to French!");
-    } catch (err) {
-      toast.error("Invalid OTP");
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Invalid OTP");
     } finally {
       setLoading(false);
     }
@@ -79,14 +83,19 @@ var LanguageSwitcher = () => {
   var currentLangLabel = languages.find(l => l.id === lang)?.label || "English";
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div 
+      className="relative" 
+      ref={dropdownRef}
+      onMouseEnter={() => setIsOpen(true)}
+      onMouseLeave={() => setIsOpen(false)}
+    >
       <button 
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => setIsOpen(prev => !prev)}
         className="flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-full hover:bg-gray-100 transition-all text-sm font-medium text-gray-700"
       >
         <Globe size={16} className="text-blue-600" />
         <span>{currentLangLabel}</span>
-        <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={14} className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
@@ -110,37 +119,79 @@ var LanguageSwitcher = () => {
         </div>
       )}
 
-      {showOtp && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100]" onClick={() => setShowOtp(false)}>
-          <div className="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl animate-in zoom-in duration-300" onClick={(e) => e.stopPropagation()}>
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <RefreshCw className={`text-blue-600 ${loading ? 'animate-spin' : ''}`} size={28} />
+      {showOtp && mounted && typeof document !== "undefined" ? createPortal(
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-300" onClick={() => setShowOtp(false)}>
+          <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative animate-in zoom-in-95 duration-300" onClick={(e) => e.stopPropagation()}>
+            <button 
+              onClick={() => setShowOtp(false)} 
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Mail className="text-blue-600" size={28} />
               </div>
-              <h3 className="text-2xl font-black text-gray-900 mb-2">Verify French</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">Enter the 6-digit OTP sent to <strong>{user?.email}</strong>. Use 000000 for testing.</p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Verify French</h3>
+              <p className="text-sm text-gray-500 leading-relaxed px-2">
+                We sent a 6-digit verification code to <strong className="text-gray-900 font-semibold">{user?.email}</strong>. Use <code className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-xs text-blue-600">000000</code> for testing.
+              </p>
             </div>
-            
-            <input 
-              value={otp} 
-              onChange={(e) => setOtp(e.target.value)} 
-              placeholder="000000" 
-              maxLength={6}
-              className="w-full border-2 border-gray-100 rounded-2xl px-4 py-4 text-3xl text-center font-black tracking-[0.4em] mb-6 focus:outline-none focus:border-blue-500 text-blue-600 bg-gray-50 transition-all" 
-              autoFocus
-            />
+
+            <div className="relative mb-8">
+              <div className="flex justify-center gap-3">
+                {Array(6).fill("").map((_, index) => {
+                  var val = otp[index] || "";
+                  var isFocused = otp.length === index;
+                  return (
+                    <div
+                      key={index}
+                      className={`w-12 h-14 border-2 rounded-xl flex items-center justify-center text-2xl font-bold transition-all ${
+                        val 
+                          ? "border-blue-600 text-blue-600 bg-blue-50/20" 
+                          : isFocused 
+                            ? "border-blue-500 ring-4 ring-blue-50" 
+                            : "border-gray-200 text-gray-700 bg-gray-50"
+                      }`}
+                    >
+                      {val}
+                    </div>
+                  );
+                })}
+              </div>
+              <input
+                type="text"
+                value={otp}
+                onChange={(e) => {
+                  var clean = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
+                  setOtp(clean);
+                }}
+                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                maxLength={6}
+                autoFocus
+              />
+            </div>
 
             <button 
               onClick={verifyFrench} 
               disabled={loading || otp.length < 6} 
-              className="w-full bg-blue-600 text-white py-4 rounded-2xl text-lg font-bold hover:bg-blue-700 disabled:opacity-50 shadow-xl shadow-blue-200 transition-all active:scale-[0.98]"
+              className="w-full bg-blue-600 text-white py-4 rounded-2xl text-base font-bold hover:bg-blue-700 disabled:opacity-50 shadow-lg shadow-blue-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
             >
+              {loading && <RefreshCw className="animate-spin" size={18} />}
               Verify & Switch
             </button>
-            <button onClick={() => setShowOtp(false)} className="w-full mt-4 text-gray-400 text-sm font-medium hover:text-gray-600 transition-colors">Cancel</button>
+
+            <button 
+              onClick={() => setShowOtp(false)} 
+              className="w-full mt-4 text-gray-400 text-sm font-semibold hover:text-gray-600 transition-colors"
+            >
+              Cancel
+            </button>
           </div>
-        </div>
-      )}
+        </div>,
+        document.body
+      ) : null}
     </div>
   );
 };
