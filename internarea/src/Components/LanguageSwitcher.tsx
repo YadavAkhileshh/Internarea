@@ -86,8 +86,6 @@ var LanguageSwitcher = () => {
     <div 
       className="relative" 
       ref={dropdownRef}
-      onMouseEnter={() => setIsOpen(true)}
-      onMouseLeave={() => setIsOpen(false)}
     >
       <button 
         onClick={() => setIsOpen(prev => !prev)}
