@@ -8,7 +8,8 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import Script from "next/script";
 
-var API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+var rawAPI = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+var API = rawAPI.endsWith("/") ? rawAPI.slice(0, -1) : rawAPI;
 
 var ProfilePage = () => {
   var user = useSelector(selectuser);
@@ -191,10 +192,20 @@ var ProfilePage = () => {
                     </div>
                   ) : resumeStep === 2 ? (
                     <div className="space-y-4">
-                      <p className="text-sm text-gray-600">OTP sent to <strong>{user?.email}</strong>. Verify to pay ₹50.</p>
-                      <input value={resumeOtp} onChange={(e) => setResumeOtp(e.target.value)} placeholder="Enter 6-digit OTP"
-                        className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-center tracking-widest focus:outline-none focus:border-blue-400 text-gray-800" />
-                      <button onClick={verifyAndPayResume} disabled={resumeLoading}
+                      <div className="text-center p-2 bg-gray-50 rounded-xl border border-gray-100">
+                        <p className="text-sm text-gray-600 mb-1">OTP sent to <strong>{user?.email}</strong>. Verify to pay ₹50.</p>
+                        <p className="text-xs text-blue-600 font-semibold mt-1">
+                          Tip: Use <code className="bg-white px-1.5 py-0.5 rounded border font-mono font-black text-blue-600">000000</code> for testing
+                        </p>
+                      </div>
+                      <input 
+                        value={resumeOtp} 
+                        onChange={(e) => setResumeOtp(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))} 
+                        placeholder="000000"
+                        maxLength={6}
+                        className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-lg text-center tracking-[0.2em] font-semibold focus:outline-none focus:border-blue-400 text-gray-800" 
+                      />
+                      <button onClick={verifyAndPayResume} disabled={resumeLoading || resumeOtp.length < 6}
                         className="w-full bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">
                         {resumeLoading && <RefreshCw className="animate-spin" size={14} />}
                         Verify & Pay ₹50
