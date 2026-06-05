@@ -80,6 +80,17 @@ router.post("/confirm-payment", async (req, res) => {
         createdAt: new Date()
       }
       await user.save()
+
+      if (user.email) {
+        var invoiceHtml = "<h2>Resume Creation Invoice</h2>" +
+          "<p><strong>Service:</strong> Resume Builder Access</p>" +
+          "<p><strong>Amount Paid:</strong> ₹50.00</p>" +
+          "<p><strong>Payment ID:</strong> " + razorpay_payment_id + "</p>" +
+          "<p><strong>Order ID:</strong> " + razorpay_order_id + "</p>" +
+          "<p><strong>Created For:</strong> " + user.name + " (" + user.email + ")</p>"
+        sendMail(user.email, "Resume Purchase Invoice - InternArea", invoiceHtml)
+          .catch(err => console.log("[RESUME INVOICE EMAIL FAILED]", err.message))
+      }
     }
 
     res.json({ message: "Resume created successfully!", resume: user.resume })
