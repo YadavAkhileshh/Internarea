@@ -23,9 +23,9 @@ var LanguageSwitcher = () => {
   var languages = [
     { id: "en", label: "English" },
     { id: "hi", label: "हिन्दी" },
-    { id: "mr", label: "मराठी" },
-    { id: "gu", label: "ગુજરાતી" },
-    { id: "ta", label: "தமிழ்" },
+    { id: "es", label: "Español" },
+    { id: "pt", label: "Português" },
+    { id: "zh", label: "中文" },
     { id: "fr", label: "Français" },
   ];
 
