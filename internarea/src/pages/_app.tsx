@@ -78,7 +78,8 @@ export default function App({ Component, pageProps }: AppProps) {
             }
           }).catch((err) => {
             if (err.response?.status === 403) {
-              alert(err.response.data.message)
+              alert(err.response.data.message);
+              auth.signOut();
             }
           })
         } else {
