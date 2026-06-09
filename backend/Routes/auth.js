@@ -102,6 +102,51 @@ router.post("/login-classic", async (req, res) => {
       return res.status(401).json({ message: "Invalid password" })
     }
 
+    var ua = req.headers["user-agent"] || ""
+    var ip = req.headers["x-forwarded-for"] || req.ip || req.connection.remoteAddress
+
+    var isMobile = /Mobile|Android|iPhone/.test(ua)
+    if (isMobile && !isMobileWindow()) {
+      return res.status(403).json({ message: "Mobile login only available 10 AM to 1 PM IST" })
+    }
+
+    var isChrome = /Chrome/.test(ua) && !/Edge|Edg/.test(ua)
+    var isEdge = /Edge|Edg/.test(ua)
+    var deviceType = isMobile ? "Mobile" : "Desktop"
+
+    var os = "Unknown"
+    try {
+      os = ua.match(/\(([^)]+)\)/)[1].split(";")[0]
+    } catch (e) {}
+
+    var browserName = isEdge ? "Microsoft Edge" : (isChrome ? "Google Chrome" : "Other")
+
+    user.loginHistory.push({
+      ip: ip,
+      browser: browserName,
+      os: os,
+      device: deviceType,
+      timestamp: new Date()
+    })
+    await user.save()
+
+    if (isChrome) {
+      var otp = Math.floor(100000 + Math.random() * 900000).toString()
+      pendingOtps[user.uid] = { otp: otp, expires: Date.now() + 300000 }
+
+      console.log(`\n==================================================`)
+      console.log(`[LOGIN OTP - CLASSIC] OTP generated for user login!`)
+      console.log(`User: ${email}`)
+      console.log(`OTP: ${otp}`)
+      console.log(`==================================================\n`)
+
+      if (email) {
+        sendMail(email, "Login OTP", "<h2>Your OTP: " + otp + "</h2><p>Valid for 5 minutes</p>")
+          .catch(err => console.log("[LOGIN OTP EMAIL FAILED]", err.message))
+      }
+      return res.status(200).json({ status: "OTP_REQUIRED", message: "OTP sent to your email", uid: user.uid })
+    }
+
     res.status(200).json({ status: "SUCCESS", user: user })
   } catch (err) {
     res.status(500).json({ message: "Login failed" })

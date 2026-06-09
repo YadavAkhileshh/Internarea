@@ -1,4 +1,6 @@
 const nodemailer = require("nodemailer")
+const fs = require("fs")
+const path = require("path")
 require("dotenv").config()
 
 var transporter = null
@@ -23,6 +25,7 @@ function getTransporter() {
 
 async function sendMail(to, subject, html) {
   setImmediate(async () => {
+    var logFile = path.join(__dirname, "../mail-debug.log")
     try {
       var t = getTransporter()
       var info = await t.sendMail({
@@ -31,9 +34,13 @@ async function sendMail(to, subject, html) {
         subject: subject,
         html: html
       })
-      console.log(`[MAIL SUCCESS] Sent email to: ${to}, MessageId: ${info.messageId}`)
+      var logMsg = `[${new Date().toISOString()}] [MAIL SUCCESS] Sent email to: ${to}, MessageId: ${info.messageId}\n`
+      console.log(logMsg.trim())
+      fs.appendFileSync(logFile, logMsg)
     } catch (err) {
-      console.log("[MAIL ERROR] email send failed:", err.message)
+      var errMsg = `[${new Date().toISOString()}] [MAIL ERROR] email send failed to ${to}: ${err.message}\n`
+      console.log(errMsg.trim())
+      fs.appendFileSync(logFile, errMsg)
     }
   })
   return true
